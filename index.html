@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>TUTUSMO - Final Stable</title>
+<title>TUTUSMO>
 <style>
     :root {
         --bg-deep: #050014;
@@ -94282,6 +94282,13 @@ function createInputRow(length, rowIndex){
         if(firstEmpty) firstEmpty.focus();
     };
     div.appendChild(fillBtn);
+
+document.addEventListener("keydown", function(event) {
+    if (event.key === "ArrowDown") {
+        event.preventDefault(); // empêche le scroll
+        fillBtn.click();        // déclenche le bouton
+    }
+});
 
     return {div,inputs};
 }
