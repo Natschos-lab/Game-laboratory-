@@ -210,6 +210,19 @@
     }
     input.letter-input.prefilled:focus { color: white; }
 
+    .input-locked {
+        border-color: var(--neon-pink) !important;
+        box-shadow: 0 0 15px var(--neon-pink) !important;
+        color: var(--neon-pink) !important;
+        animation: pulse-glow 1.5s infinite alternate;
+        cursor: not-allowed;
+        user-select: none;
+    }
+    @keyframes pulse-glow {
+        from { box-shadow: 0 0 10px var(--neon-pink); }
+        to { box-shadow: 0 0 25px var(--neon-pink), 0 0 5px rgba(255,0,255,0.5) inset; }
+    }
+
     .auto-fill-btn {
         width: 44px; height: 44px;
         border-radius: 50%;
@@ -93930,6 +93943,7 @@ let animTimeouts = [];
 let knownSolutionState = []; 
 let foundWordsHistory = [];
 let isProcessing = false;
+let knownLetterStates = {};
 
 // Stats globales
 let infiniteScore = 0;
@@ -94038,19 +94052,138 @@ function initAlphabet(){
     });
 }
 
-function updateAlphabet(letter,status){
-    const e=document.getElementById("alpha-"+letter.toUpperCase());
-    if(!e) return;
-    const currentStatus = e.getAttribute("data-status");
-    if(currentStatus==="correct") return;
-    if(currentStatus==="present" && status==="absent") return;
-    e.classList.remove("correct","present","absent");
-    e.classList.add(status);
-    e.setAttribute("data-status", status);
+function evaluateGuessColors(guessStr, solutionStr) {
+    let solution = solutionStr.split("");
+    let guess = guessStr.split("");
+    let colors = new Array(guess.length).fill("absent");
+    for(let i=0; i<guess.length; i++){
+        if(guess[i] === solution[i]){
+            colors[i] = "correct";
+            solution[i] = null;
+        }
+    }
+    for(let i=0; i<guess.length; i++){
+        if(colors[i] === "correct") continue;
+        let idx = solution.indexOf(guess[i]);
+        if(idx !== -1){ 
+            colors[i] = "present"; 
+            solution[idx] = null; 
+        }
+    }
+    return colors;
+}
+
+function renderAlphabetKeys() {
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(l => {
+        const e = document.getElementById("alpha-" + l);
+        if (!e) return;
+        
+        let states = knownLetterStates[l] || [];
+        
+        let filteredStates = states.filter(s => s !== 'absent');
+        if (filteredStates.length > 0) {
+            states = filteredStates;
+        } else if (states.length > 0) {
+            states = ['absent'];
+        }
+
+        if (!states || states.length === 0) {
+            e.style.background = "";
+            e.style.border = "";
+            e.className = "";
+            e.style.color = "";
+            return;
+        }
+
+        const numStates = states.length;
+        if (numStates === 1) {
+            const status = states[0];
+            e.className = "";
+            e.classList.add(status);
+            e.style.background = ""; 
+            e.style.border = "";
+            e.style.color = "";
+        } else {
+            e.className = ""; 
+            
+            let colors = states.map(s => s === 'correct' ? '#00b894' : (s === 'present' ? '#fdcb6e' : '#3a3a50'));
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">`;
+            svg += `<rect width="100" height="100" fill="${colors[0]}" />`;
+            
+            for(let i=1; i<numStates; i++) {
+                let y = (100 / numStates) * i;
+                let A = 6;
+                let dFill = `M 0,${y} Q 25,${y-A} 50,${y} T 100,${y} T 150,${y} T 200,${y} L 200,150 L 0,150 Z`;
+                let dLine = `M 0,${y} Q 25,${y-A} 50,${y} T 100,${y} T 150,${y} T 200,${y}`;
+                
+                svg += `
+                <g>
+                    <animateTransform attributeName="transform" type="translate" from="0,0" to="-100,0" dur="${2 + i*0.5}s" repeatCount="indefinite" />
+                    <path d="${dFill}" fill="${colors[i]}" />
+                    <path d="${dLine}" fill="none" stroke="#000" stroke-width="3" vector-effect="non-scaling-stroke" />
+                </g>`;
+            }
+            svg += `</svg>`;
+            
+            let encoded = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg).replace(/'/g, '%27').replace(/"/g, '%22');
+            e.style.background = `url('${encoded}')`;
+            e.style.backgroundSize = "100% 100%";
+            e.style.border = "1px solid var(--neon-blue)";
+            
+            if(states.every(s => s === 'present')) {
+                 e.style.color = '#2d3436';
+            } else {
+                 e.style.color = 'white';
+            }
+        }
+    });
+}
+
+function recalculateLetterStates() {
+    knownLetterStates = {};
+    let allGuesses = [];
+    document.querySelectorAll('#game .word-row').forEach(row => {
+        if(row.querySelector('input')) return; // Ignore row currently being typed
+        let w = "";
+        row.querySelectorAll('.letter-box').forEach(box => w += box.textContent);
+        if(w.length === currentWord.length) allGuesses.push(w);
+    });
+
+    allGuesses.forEach(guess => {
+        let colors = evaluateGuessColors(guess, normalizedWord);
+        let letterCounts = {};
+        for(let i=0; i<guess.length; i++) {
+            let l = guess[i];
+            if(!letterCounts[l]) letterCounts[l] = [];
+            letterCounts[l].push(colors[i]);
+        }
+        
+        for(let l in letterCounts) {
+            let currentBest = knownLetterStates[l] || [];
+            let newStates = letterCounts[l];
+            
+            const rank = { 'correct': 3, 'present': 2, 'absent': 1 };
+            newStates.sort((a,b) => rank[b] - rank[a]);
+            
+            let merged = [];
+            let len = Math.max(currentBest.length, newStates.length);
+            for(let i=0; i<len; i++) {
+                let s1 = currentBest[i];
+                let s2 = newStates[i];
+                if(!s1) merged.push(s2);
+                else if(!s2) merged.push(s1);
+                else merged.push(rank[s1] > rank[s2] ? s1 : s2);
+            }
+            knownLetterStates[l] = merged;
+        }
+    });
+    
+    renderAlphabetKeys();
 }
 
 // --- GESTION DU JEU ---
 function initGame(isReset = false){
+    knownLetterStates = {};
     isProcessing = false;
     animTimeouts.forEach(t => clearTimeout(t));
     animTimeouts = [];
@@ -94165,6 +94298,7 @@ function restoreGame(guesses, status) {
     }
 
     document.getElementById("tries").textContent=(maxAttempts-currentAttempt) + " ESSAIS RESTANTS";
+    recalculateLetterStates();
 
     if (status === 'won') {
         showDailyLockedScreen(true);
@@ -94196,7 +94330,6 @@ function createStaticRow(guess) {
         display.className="letter-box";
         display.textContent=g[i];
         display.classList.add(colors[i]);
-        updateAlphabet(g[i],colors[i]);
         rowDiv.appendChild(display);
     }
     gameContainer.appendChild(rowDiv);
@@ -94223,36 +94356,65 @@ function createInputRow(length, rowIndex){
             input.classList.add("prefilled");
         }
 
+        const isLocked = (el) => el.readOnly || el.classList.contains('input-locked');
+
         if(!input.readOnly){
+            input.addEventListener('dblclick', function() {
+                if (this.value === "") return;
+                this.classList.toggle('input-locked');
+                if (this.classList.contains('input-locked')) {
+                    this.dataset.lockedValue = this.value;
+                    SoundEngine.playValid();
+                } else {
+                    delete this.dataset.lockedValue;
+                    SoundEngine.playPop();
+                }
+            });
+
             input.addEventListener('input',function(){
+                if(this.classList.contains('input-locked')) {
+                    this.value = this.dataset.lockedValue || '';
+                    return;
+                }
                 this.value=normalize(this.value.toUpperCase());
                 if(this.value.length > 1) this.value = this.value.slice(-1);
                 this.classList.remove('pop', 'prefilled'); 
                 void this.offsetWidth;
                 this.classList.add('pop');
-                if(this.value && inputs[i+1] && !inputs[i+1].readOnly) inputs[i+1].focus();
+                if(this.value) {
+                    let nextIndex = i + 1;
+                    while(nextIndex < length && isLocked(inputs[nextIndex])) nextIndex++;
+                    if(nextIndex < length) inputs[nextIndex].focus();
+                }
             });
 
             input.addEventListener('keydown',function(e){
                 if(e.key === "ArrowRight") {
-                    if(i < length - 1 && !inputs[i+1].readOnly) inputs[i+1].focus();
+                    let nextIndex = i + 1;
+                    while(nextIndex < length && isLocked(inputs[nextIndex])) nextIndex++;
+                    if(nextIndex < length) inputs[nextIndex].focus();
                 }
                 if(e.key === "ArrowLeft") {
-                    if(i > 0 && !inputs[i-1].readOnly) inputs[i-1].focus();
+                    let prevIndex = i - 1;
+                    while(prevIndex >= 0 && isLocked(inputs[prevIndex])) prevIndex--;
+                    if(prevIndex >= 0) inputs[prevIndex].focus();
                 }
                 if(e.key==="Backspace"){
                     if(this.value === "") {
-                        if (i > 1) { 
-                             let prevIndex = i - 1;
-                             while(prevIndex >= 0 && inputs[prevIndex].readOnly) prevIndex--;
-                             if(prevIndex >= 0) { inputs[prevIndex].value=""; inputs[prevIndex].focus(); }
+                         let prevIndex = i - 1;
+                         while(prevIndex >= 0 && isLocked(inputs[prevIndex])) prevIndex--;
+                         if(prevIndex >= 0) {
+                             if(!inputs[prevIndex].classList.contains('input-locked')) inputs[prevIndex].value=""; 
+                             inputs[prevIndex].focus();
                          }
-                    } else { 
-                        this.value=""; this.classList.remove("prefilled");
+                    } else {
+                        if(!this.classList.contains('input-locked')) {
+                            this.value=""; this.classList.remove("prefilled");
+                        }
                     }
                 }
                 if(this.value.length >= 1 && e.key.length === 1 && e.key.match(/[a-z]/i)) {
-                    this.value = "";
+                    if(!this.classList.contains('input-locked')) this.value = "";
                 }
             });
         }
@@ -94273,22 +94435,22 @@ function createInputRow(length, rowIndex){
     fillBtn.onclick = function() {
         SoundEngine.playClick(); // SON : CLIC DOUX
         inputs.forEach((inp, idx) => {
-            if(!inp.readOnly && knownSolutionState[idx]) {
+            if(!inp.readOnly && !inp.classList.contains('input-locked') && knownSolutionState[idx]) {
                 inp.value = knownSolutionState[idx];
                 inp.classList.add('pop');
             }
         });
-        const firstEmpty = inputs.find(inp => !inp.readOnly && inp.value === "");
+        const firstEmpty = inputs.find(inp => !inp.readOnly && !inp.classList.contains('input-locked') && inp.value === "");
         if(firstEmpty) firstEmpty.focus();
     };
     div.appendChild(fillBtn);
 
-document.addEventListener("keydown", function(event) {
-    if (event.key === "ArrowDown") {
-        event.preventDefault(); // empêche le scroll
-        fillBtn.click();        // déclenche le bouton
-    }
-});
+    div.addEventListener("keydown", function(event) {
+        if (event.key === "ArrowDown") {
+            event.preventDefault(); // empêche le scroll
+            fillBtn.click();        // déclenche le bouton
+        }
+    });
 
     return {div,inputs};
 }
@@ -94415,9 +94577,13 @@ function checkWord(){
         currentRowDiv.classList.add("shake");
         SoundEngine.playInvalid(); // SON : ERREUR
         setTimeout(()=>currentRowDiv.classList.remove("shake"), 500);
-        currentRowInputs.forEach((i,idx)=>{ if(!i.readOnly) i.value=""; i.classList.remove("prefilled"); });
-        const firstEditable = currentRowInputs.find(idx => !idx.readOnly);
-        if(firstEditable) firstEditable.focus();
+        currentRowInputs.forEach((i,idx)=>{ 
+            if(!i.readOnly && !i.classList.contains('input-locked')) {
+                i.value=""; i.classList.remove("prefilled"); 
+            }
+        });
+        const firstEmpty = currentRowInputs.find(idx => !idx.readOnly && !idx.classList.contains('input-locked'));
+        if(firstEmpty) firstEmpty.focus();
         if(rowBtn) rowBtn.style.display = 'flex';
         isProcessing = false; // DEVERROUILLAGE
         return;
@@ -94449,7 +94615,7 @@ function checkWord(){
         let tId = setTimeout(()=>{
             display.classList.add(colors[i]);
             display.style.transform = "rotateX(0deg)";
-            updateAlphabet(guess[i],colors[i]);
+            if (i === guess.length - 1) recalculateLetterStates();
         }, i*150); 
         animTimeouts.push(tId);
         rowDiv.appendChild(display);
