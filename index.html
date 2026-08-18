@@ -12,6 +12,9 @@
     <style>
         :root {
             --bg-deep: #050014;
+            --bg-mid-1: #240046;
+            --bg-mid-2: #004e92;
+            --bg-mid-3: #3a008d;
             --glass-bg: rgba(20, 20, 40, 0.6);
             --glass-border: rgba(0, 242, 255, 0.2);
             --neon-blue: #00f2ff;
@@ -19,8 +22,9 @@
             --neon-green: #39ff14;
             --color-correct: #00b894;
             --color-present: #fdcb6e;
-            /* Jaune */
             --color-absent: #3a3a50;
+            --letter-on-yellow: #2d3436;
+            --text-base: #ffffff;
             --neon-red: #ff0055;
         }
 
@@ -32,8 +36,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: white;
-            background: linear-gradient(135deg, var(--bg-deep) 0%, #240046 25%, #004e92 50%, #3a008d 75%, var(--bg-deep) 100%);
+            color: var(--text-base);
+            background: linear-gradient(135deg, var(--bg-deep) 0%, var(--bg-mid-1) 25%, var(--bg-mid-2) 50%, var(--bg-mid-3) 75%, var(--bg-deep) 100%);
             background-size: 400% 400%;
             animation: gradientBG 10s ease infinite;
             overflow-x: hidden;
@@ -99,6 +103,7 @@
             flex-direction: column;
             align-items: center;
             gap: 10px;
+            pointer-events: auto;
         }
 
         .sound-btn {
@@ -115,12 +120,198 @@
             box-shadow: 0 0 10px var(--color-present);
             transition: 0.3s;
             font-size: 20px;
+            pointer-events: auto;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         .sound-btn:hover {
             background: var(--color-present);
             color: #050014;
             box-shadow: 0 0 20px var(--color-present);
+        }
+
+        .theme-btn {
+            position: relative;
+            background: linear-gradient(135deg, rgba(0, 242, 255, 0.18), rgba(255, 0, 255, 0.18));
+            border: 1px solid rgba(0, 242, 255, 0.9);
+            color: var(--neon-blue);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 0 1px rgba(0, 242, 255, 0.25), 0 0 15px rgba(0, 242, 255, 0.7), 0 0 26px rgba(255, 0, 255, 0.35);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+            font-size: 22px;
+            padding: 0;
+            pointer-events: auto;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        .theme-btn::before {
+            content: "";
+            position: absolute;
+            inset: 2px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.28), transparent 35%);
+            z-index: -1;
+        }
+
+        .theme-btn svg {
+            width: 22px;
+            height: 22px;
+            display: block;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 6px currentColor);
+        }
+
+        .theme-btn:hover {
+            transform: translateY(-1px) scale(1.06);
+            box-shadow: 0 0 0 1px rgba(0, 242, 255, 0.5), 0 0 22px rgba(0, 242, 255, 0.9), 0 0 30px rgba(255, 0, 255, 0.5);
+            filter: saturate(1.2);
+        }
+
+        .theme-btn:active {
+            transform: scale(0.96);
+        }
+
+        .theme-panel {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: min(340px, 82vw);
+            background: linear-gradient(180deg, rgba(12, 16, 36, 0.97), rgba(10, 12, 28, 0.9));
+            border: 1px solid rgba(0, 242, 255, 0.8);
+            border-radius: 22px;
+            padding: 14px 14px 12px;
+            backdrop-filter: blur(18px);
+            box-shadow: 0 0 0 1px rgba(0, 242, 255, 0.2), 0 0 25px rgba(0, 242, 255, 0.24), 0 0 38px rgba(255, 0, 255, 0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+            display: none;
+            z-index: 30;
+            pointer-events: auto;
+            transform-origin: top right;
+        }
+
+        .theme-panel.visible {
+            display: block;
+            animation: panelOpen 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .theme-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 2px 2px 10px;
+            color: var(--neon-blue);
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-size: 0.68rem;
+        }
+
+        .theme-panel-header .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-shadow: 0 0 12px rgba(0, 242, 255, 0.8);
+        }
+
+        .theme-panel-header .panel-close {
+            background: rgba(255, 0, 255, 0.08);
+            color: var(--neon-pink);
+            border: 1px solid rgba(255, 0, 255, 0.75);
+            border-radius: 999px;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            box-shadow: 0 0 14px rgba(255, 0, 255, 0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .theme-panel-header .panel-close:hover {
+            transform: rotate(90deg) scale(1.05);
+            box-shadow: 0 0 18px rgba(255, 0, 255, 0.25);
+        }
+
+        .theme-panel-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .color-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .color-field label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .color-field input[type="color"] {
+            width: 100%;
+            height: 42px;
+            border: 1px solid rgba(0, 242, 255, 0.8);
+            background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,242,255,0.08));
+            border-radius: 12px;
+            padding: 0;
+            cursor: pointer;
+            box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.15), 0 0 18px rgba(0, 242, 255, 0.08);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .color-field input[type="color"]:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 0, 255, 0.8);
+            box-shadow: inset 0 0 10px rgba(255, 0, 255, 0.12), 0 0 18px rgba(255, 0, 255, 0.16);
+        }
+
+        .reset-theme-btn {
+            margin-top: 14px;
+            width: 100%;
+            padding: 11px 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 0, 255, 0.8);
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.16), rgba(0, 242, 255, 0.09));
+            color: var(--neon-pink);
+            font-weight: 900;
+            letter-spacing: 1.2px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            box-shadow: 0 0 18px rgba(255, 0, 255, 0.18);
+        }
+
+        .reset-theme-btn:hover {
+            transform: translateY(-1px);
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.85), rgba(0, 242, 255, 0.6));
+            color: #050014;
+            box-shadow: 0 0 22px rgba(255, 0, 255, 0.46), 0 0 28px rgba(0, 242, 255, 0.32);
+            filter: saturate(1.15);
         }
 
         .volume-slider-container {
@@ -402,7 +593,7 @@
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.05);
             border: 2px solid rgba(255, 255, 255, 0.1);
-            color: white;
+            color: var(--text-base);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -512,7 +703,7 @@
             background: var(--color-present) !important;
             border-color: var(--color-present) !important;
             box-shadow: 0 0 15px var(--color-present);
-            color: #2d3436 !important;
+            color: var(--letter-on-yellow) !important;
             text-shadow: none;
         }
 
@@ -716,10 +907,24 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
+                transform: translateY(-6px) scale(0.98);
             }
 
             to {
                 opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes panelOpen {
+            from {
+                opacity: 0;
+                transform: translateY(-8px) scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
             }
         }
 
@@ -749,7 +954,7 @@
     </div>
 
     <div class="sound-controls">
-        <button id="sound-btn" class="sound-btn">
+        <button id="sound-btn" class="sound-btn" aria-label="Volume">
             <svg id="spkr-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -758,6 +963,64 @@
         </button>
         <div class="volume-slider-container" id="vol-container">
             <input type="range" id="volume-slider" orient="vertical" min="0" max="1" step="0.05" value="0.5">
+        </div>
+        <button id="theme-btn" class="theme-btn" aria-label="Personnaliser les couleurs" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 18.5l7.5-7.5 5 5L9 23.5z"></path>
+                <path d="M14.5 4.5l5 5"></path>
+                <path d="M4 18.5l-1.5 3 3-1.5"></path>
+                <path d="M17.5 3.5l2.5-2.5 2.5 2.5-2.5 2.5z"></path>
+            </svg>
+        </button>
+
+        <div id="theme-panel" class="theme-panel" aria-live="polite">
+            <div class="theme-panel-header">
+                <span class="panel-title">✦ Neon</span>
+                <button type="button" class="panel-close" id="theme-panel-close" aria-label="Fermer la palette">×</button>
+            </div>
+            <div class="theme-panel-grid">
+                <div class="color-field">
+                    <label for="color-title-main">Titre principal</label>
+                    <input id="color-title-main" class="color-picker" data-css-var="--neon-blue" type="color" value="#00f2ff">
+                </div>
+                <div class="color-field">
+                    <label for="color-title-accent">Titre accent</label>
+                    <input id="color-title-accent" class="color-picker" data-css-var="--neon-green" type="color" value="#39ff14">
+                </div>
+                <div class="color-field">
+                    <label for="color-base-text">Texte de base</label>
+                    <input id="color-base-text" class="color-picker" data-css-var="--text-base" type="color" value="#ffffff">
+                </div>
+                <div class="color-field">
+                    <label for="color-yellow">Lettres jaunes</label>
+                    <input id="color-yellow" class="color-picker" data-css-var="--color-present" type="color" value="#fdcb6e">
+                </div>
+                <div class="color-field">
+                    <label for="color-black">Lettres noires</label>
+                    <input id="color-black" class="color-picker" data-css-var="--letter-on-yellow" type="color" value="#2d3436">
+                </div>
+                <div class="color-field">
+                    <label for="color-green">Lettres vertes</label>
+                    <input id="color-green" class="color-picker" data-css-var="--color-correct" type="color" value="#00b894">
+                </div>
+                <div class="color-field">
+                    <label for="color-bg-deep">Fond profond</label>
+                    <input id="color-bg-deep" class="color-picker" data-css-var="--bg-deep" type="color" value="#050014">
+                </div>
+                <div class="color-field">
+                    <label for="color-bg-1">Fond violet</label>
+                    <input id="color-bg-1" class="color-picker" data-css-var="--bg-mid-1" type="color" value="#240046">
+                </div>
+                <div class="color-field">
+                    <label for="color-bg-2">Fond bleu</label>
+                    <input id="color-bg-2" class="color-picker" data-css-var="--bg-mid-2" type="color" value="#004e92">
+                </div>
+                <div class="color-field">
+                    <label for="color-bg-3">Fond violet 2</label>
+                    <input id="color-bg-3" class="color-picker" data-css-var="--bg-mid-3" type="color" value="#3a008d">
+                </div>
+            </div>
+            <button id="reset-theme-btn" class="reset-theme-btn" type="button">RESET</button>
         </div>
     </div>
 
@@ -976,15 +1239,125 @@
             const soundBtn = document.getElementById('sound-btn');
             const volContainer = document.getElementById('vol-container');
             const volSlider = document.getElementById('volume-slider');
+            const themeBtn = document.getElementById('theme-btn');
+            const themePanel = document.getElementById('theme-panel');
+            const themePanelClose = document.getElementById('theme-panel-close');
+            const resetThemeBtn = document.getElementById('reset-theme-btn');
+            const themeDefaults = {
+                '--bg-deep': '#050014',
+                '--bg-mid-1': '#240046',
+                '--bg-mid-2': '#004e92',
+                '--bg-mid-3': '#3a008d',
+                '--neon-blue': '#00f2ff',
+                '--neon-green': '#39ff14',
+                '--color-correct': '#00b894',
+                '--color-present': '#fdcb6e',
+                '--letter-on-yellow': '#2d3436',
+                '--text-base': '#ffffff',
+                '--neon-pink': '#ff00ff'
+            };
 
-            soundBtn.addEventListener('click', () => {
-                volContainer.classList.toggle('visible');
+            function applyTheme(theme) {
+                Object.entries(theme).forEach(([key, value]) => {
+                    document.documentElement.style.setProperty(key, value);
+                });
+                document.querySelectorAll('.color-picker').forEach(input => {
+                    const key = input.dataset.cssVar;
+                    input.value = theme[key] || getComputedStyle(document.documentElement).getPropertyValue(key).trim();
+                });
+                localStorage.setItem('tutusmo_theme', JSON.stringify(theme));
+            }
+
+            function loadTheme() {
+                const saved = localStorage.getItem('tutusmo_theme');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        applyTheme({ ...themeDefaults, ...parsed });
+                        return;
+                    } catch (error) {
+                        console.warn('Palette enregistrée invalide, remise aux valeurs par défaut.', error);
+                    }
+                }
+                applyTheme(themeDefaults);
+            }
+
+            function toggleVolumePanel() {
+                const shouldOpen = !volContainer.classList.contains('visible');
+                volContainer.classList.toggle('visible', shouldOpen);
+                if (themePanel.classList.contains('visible')) {
+                    themePanel.classList.remove('visible');
+                }
                 SoundEngine.init();
+            }
+
+            function toggleThemePanel() {
+                const shouldOpen = !themePanel.classList.contains('visible');
+                themePanel.classList.toggle('visible', shouldOpen);
+                if (volContainer.classList.contains('visible')) {
+                    volContainer.classList.remove('visible');
+                }
+                themeBtn.setAttribute('aria-expanded', String(shouldOpen));
+            }
+
+            soundBtn.addEventListener('click', toggleVolumePanel);
+            soundBtn.addEventListener('pointerdown', (event) => {
+                event.preventDefault();
+                toggleVolumePanel();
             });
+
+            function closeThemePanel() {
+                themePanel.classList.remove('visible');
+                themeBtn.setAttribute('aria-expanded', 'false');
+            }
+
+            function openThemePanel() {
+                themePanel.classList.add('visible');
+                themeBtn.setAttribute('aria-expanded', 'true');
+            }
+
+            themeBtn.addEventListener('click', () => {
+                if (themePanel.classList.contains('visible')) {
+                    closeThemePanel();
+                } else {
+                    openThemePanel();
+                }
+                if (volContainer.classList.contains('visible')) {
+                    volContainer.classList.remove('visible');
+                }
+            });
+
+            themeBtn.addEventListener('pointerdown', (event) => {
+                event.preventDefault();
+            });
+
+            themePanelClose.addEventListener('click', () => {
+                closeThemePanel();
+            });
+
+            resetThemeBtn.addEventListener('click', () => {
+                applyTheme(themeDefaults);
+                closeThemePanel();
+                SoundEngine.playPop();
+            });
+
+            document.querySelectorAll('.color-picker').forEach(input => {
+                input.addEventListener('input', (event) => {
+                    const cssVar = event.target.dataset.cssVar;
+                    document.documentElement.style.setProperty(cssVar, event.target.value);
+                    const currentTheme = {};
+                    document.querySelectorAll('.color-picker').forEach((picker) => {
+                        currentTheme[picker.dataset.cssVar] = picker.value;
+                    });
+                    localStorage.setItem('tutusmo_theme', JSON.stringify({ ...themeDefaults, ...currentTheme }));
+                });
+            });
+
             volSlider.addEventListener('input', (e) => {
                 SoundEngine.setVolume(e.target.value);
             });
 
+            loadTheme();
 
             // --- DICTIONNAIRE ---
             const wordList = [
@@ -94834,6 +95207,19 @@
                         });
 
                         input.addEventListener('keydown', function (e) {
+                            if (e.key === "ArrowUp") {
+                                e.preventDefault();
+                                if (this.value === "") return;
+                                this.classList.toggle('input-locked');
+                                if (this.classList.contains('input-locked')) {
+                                    this.dataset.lockedValue = this.value;
+                                    SoundEngine.playValid();
+                                } else {
+                                    delete this.dataset.lockedValue;
+                                    SoundEngine.playPop();
+                                }
+                                return;
+                            }
                             if (e.key === "ArrowRight") {
                                 let nextIndex = i + 1;
                                 while (nextIndex < length && isLocked(inputs[nextIndex])) nextIndex++;
