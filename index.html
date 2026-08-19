@@ -449,23 +449,32 @@
         .history-item {
             padding: 8px 12px;
             margin-bottom: 8px;
-            background: rgba(0, 184, 148, 0.1);
-            border: 1px solid var(--neon-green);
+            background: color-mix(in srgb, var(--history-won) 10%, transparent);
+            border: 1px solid var(--history-won);
             border-radius: 8px;
             font-family: monospace;
             font-weight: bold;
             text-align: center;
-            color: var(--neon-green);
-            text-shadow: 0 0 5px var(--neon-green);
+            color: var(--history-won);
+            text-shadow: 0 0 5px var(--history-won);
             animation: slideInLeft 0.3s ease;
             font-size: 0.9rem;
         }
 
+        .history-item a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .history-item a:hover {
+            text-decoration: underline;
+        }
+
         .history-item.lost {
-            border-color: var(--neon-red);
-            color: var(--neon-red);
-            text-shadow: 0 0 5px var(--neon-red);
-            background: rgba(255, 0, 85, 0.1);
+            border-color: var(--history-lost);
+            color: var(--history-lost);
+            text-shadow: 0 0 5px var(--history-lost);
+            background: color-mix(in srgb, var(--history-lost) 10%, transparent);
         }
 
         @media (max-width: 1100px) {
@@ -980,11 +989,11 @@
             </div>
             <div class="theme-panel-grid">
                 <div class="color-field">
-                    <label for="color-title-main">Titre principal</label>
+                    <label for="color-title-main">Titre gauche</label>
                     <input id="color-title-main" class="color-picker" data-css-var="--neon-blue" type="color" value="#00f2ff">
                 </div>
                 <div class="color-field">
-                    <label for="color-title-accent">Titre accent</label>
+                    <label for="color-title-accent">Titre droit</label>
                     <input id="color-title-accent" class="color-picker" data-css-var="--neon-green" type="color" value="#39ff14">
                 </div>
                 <div class="color-field">
@@ -1004,19 +1013,31 @@
                     <input id="color-green" class="color-picker" data-css-var="--color-correct" type="color" value="#00b894">
                 </div>
                 <div class="color-field">
-                    <label for="color-bg-deep">Fond profond</label>
+                    <label for="color-absent">Cases invalides</label>
+                    <input id="color-absent" class="color-picker" data-css-var="--color-absent" type="color" value="#3a3a50">
+                </div>
+                <div class="color-field">
+                    <label for="color-history-won">Historique trouvé</label>
+                    <input id="color-history-won" class="color-picker" data-css-var="--history-won" type="color" value="#39ff14">
+                </div>
+                <div class="color-field">
+                    <label for="color-history-lost">Historique raté</label>
+                    <input id="color-history-lost" class="color-picker" data-css-var="--history-lost" type="color" value="#ff0055">
+                </div>
+                <div class="color-field">
+                    <label for="color-bg-deep">Fond 1</label>
                     <input id="color-bg-deep" class="color-picker" data-css-var="--bg-deep" type="color" value="#050014">
                 </div>
                 <div class="color-field">
-                    <label for="color-bg-1">Fond violet</label>
+                    <label for="color-bg-1">Fond 2</label>
                     <input id="color-bg-1" class="color-picker" data-css-var="--bg-mid-1" type="color" value="#240046">
                 </div>
                 <div class="color-field">
-                    <label for="color-bg-2">Fond bleu</label>
+                    <label for="color-bg-2">Fond 3</label>
                     <input id="color-bg-2" class="color-picker" data-css-var="--bg-mid-2" type="color" value="#004e92">
                 </div>
                 <div class="color-field">
-                    <label for="color-bg-3">Fond violet 2</label>
+                    <label for="color-bg-3">Fond 4</label>
                     <input id="color-bg-3" class="color-picker" data-css-var="--bg-mid-3" type="color" value="#3a008d">
                 </div>
             </div>
@@ -1252,6 +1273,9 @@
                 '--neon-green': '#39ff14',
                 '--color-correct': '#00b894',
                 '--color-present': '#fdcb6e',
+                '--color-absent': '#3a3a50',
+                '--history-won': '#39ff14',
+                '--history-lost': '#ff0055',
                 '--letter-on-yellow': '#2d3436',
                 '--text-base': '#ffffff',
                 '--neon-pink': '#ff00ff'
@@ -1301,10 +1325,6 @@
             }
 
             soundBtn.addEventListener('click', toggleVolumePanel);
-            soundBtn.addEventListener('pointerdown', (event) => {
-                event.preventDefault();
-                toggleVolumePanel();
-            });
 
             function closeThemePanel() {
                 themePanel.classList.remove('visible');
@@ -1350,6 +1370,7 @@
                         currentTheme[picker.dataset.cssVar] = picker.value;
                     });
                     localStorage.setItem('tutusmo_theme', JSON.stringify({ ...themeDefaults, ...currentTheme }));
+                    renderAlphabetKeys();
                 });
             });
 
@@ -94800,10 +94821,15 @@
                 foundWordsHistory.forEach(item => {
                     const li = document.createElement("li");
                     li.className = "history-item";
-                    li.textContent = item.word;
                     if (item.status === 'lost') {
                         li.classList.add('lost');
                     }
+                    const link = document.createElement("a");
+                    link.href = `https://www.google.com/search?q=${encodeURIComponent(`définition ${item.word}`)}`;
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+                    link.textContent = item.word;
+                    li.appendChild(link);
                     historyList.prepend(li);
                 });
             }
@@ -94924,7 +94950,12 @@
                     } else {
                         e.className = "";
 
-                        let colors = states.map(s => s === 'correct' ? '#00b894' : (s === 'present' ? '#fdcb6e' : '#3a3a50'));
+                        const stateColors = {
+                            correct: varCss('--color-correct'),
+                            present: varCss('--color-present'),
+                            absent: varCss('--color-absent')
+                        };
+                        let colors = states.map(s => stateColors[s]);
                         let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">`;
                         svg += `<rect width="100" height="100" fill="${colors[0]}" />`;
 
@@ -94949,9 +94980,9 @@
                         e.style.border = "1px solid var(--neon-blue)";
 
                         if (states.every(s => s === 'present')) {
-                            e.style.color = '#2d3436';
+                            e.style.color = varCss('--letter-on-yellow');
                         } else {
-                            e.style.color = 'white';
+                            e.style.color = varCss('--text-base');
                         }
                     }
                 });
