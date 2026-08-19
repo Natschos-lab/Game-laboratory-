@@ -314,6 +314,117 @@
             filter: saturate(1.15);
         }
 
+        .random-theme-btn {
+            margin-top: 14px;
+            flex: 1;
+            padding: 11px 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(57, 255, 20, 0.8);
+            background: linear-gradient(135deg, rgba(57, 255, 20, 0.16), rgba(0, 242, 255, 0.09));
+            color: var(--neon-green);
+            font-weight: 900;
+            letter-spacing: 1.2px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            box-shadow: 0 0 18px rgba(57, 255, 20, 0.18);
+        }
+
+        .random-theme-btn:hover {
+            transform: translateY(-1px);
+            background: linear-gradient(135deg, rgba(57, 255, 20, 0.85), rgba(0, 242, 255, 0.6));
+            color: #050014;
+            box-shadow: 0 0 22px rgba(57, 255, 20, 0.46), 0 0 28px rgba(0, 242, 255, 0.32);
+            filter: saturate(1.15);
+        }
+
+        .theme-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .compact-reset-btn {
+            flex: 1;
+            margin-top: 14px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 0, 255, 0.8);
+            background: rgba(255, 0, 255, 0.1);
+            color: var(--neon-pink);
+            font-size: 0.78rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        }
+
+        .compact-reset-btn:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 0, 255, 0.8);
+            color: #050014;
+            box-shadow: 0 0 18px rgba(255, 0, 255, 0.45);
+        }
+
+        .random-dice-btn {
+            flex: 0 0 42px;
+            width: 42px;
+            height: 42px;
+            margin-top: 14px;
+            padding: 0;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            background: #050014;
+            color: #ffffff;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            box-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
+        }
+
+        .random-dice-btn:hover {
+            transform: translateY(-1px) rotate(12deg) scale(1.06);
+            box-shadow: 0 0 22px rgba(255, 255, 255, 0.8);
+            filter: brightness(1.1);
+        }
+
+        @keyframes diceRoll {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.12); }
+            50% { transform: rotate(180deg) scale(0.92); }
+            75% { transform: rotate(270deg) scale(1.12); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        .random-dice-btn.rolling {
+            animation: diceRoll 0.55s ease-in-out;
+        }
+
+        .reset-theme-btn {
+            flex: 0 0 42px;
+            width: 42px;
+            height: 42px;
+            margin-top: 14px;
+            padding: 0;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            background: #050014;
+            color: #ffffff;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            box-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
+        }
+
+        .reset-theme-btn:hover {
+            transform: translateY(-1px) rotate(12deg) scale(1.06);
+            background: #050014;
+            color: #ffffff;
+            box-shadow: 0 0 22px rgba(255, 255, 255, 0.8);
+            filter: brightness(1.1);
+        }
+
         .volume-slider-container {
             display: none;
             background: var(--glass-bg);
@@ -1041,7 +1152,10 @@
                     <input id="color-bg-3" class="color-picker" data-css-var="--bg-mid-3" type="color" value="#3a008d">
                 </div>
             </div>
-            <button id="reset-theme-btn" class="reset-theme-btn" type="button">RESET</button>
+            <div class="theme-actions">
+                <button id="reset-theme-btn" class="compact-reset-btn" type="button">RESET</button>
+                <button id="random-theme-btn" class="random-dice-btn" type="button" aria-label="Appliquer des couleurs aléatoires" title="Appliquer des couleurs aléatoires">⚄</button>
+            </div>
         </div>
     </div>
 
@@ -1263,6 +1377,7 @@
             const themeBtn = document.getElementById('theme-btn');
             const themePanel = document.getElementById('theme-panel');
             const themePanelClose = document.getElementById('theme-panel-close');
+            const randomThemeBtn = document.getElementById('random-theme-btn');
             const resetThemeBtn = document.getElementById('reset-theme-btn');
             const themeDefaults = {
                 '--bg-deep': '#050014',
@@ -1304,6 +1419,11 @@
                     }
                 }
                 applyTheme(themeDefaults);
+            }
+
+            function randomColor() {
+                const value = Math.floor(Math.random() * 0x1000000);
+                return `#${value.toString(16).padStart(6, '0')}`;
             }
 
             function toggleVolumePanel() {
@@ -1355,9 +1475,25 @@
                 closeThemePanel();
             });
 
+            randomThemeBtn.addEventListener('click', () => {
+                randomThemeBtn.classList.remove('rolling');
+                void randomThemeBtn.offsetWidth;
+                randomThemeBtn.classList.add('rolling');
+                const randomTheme = {};
+                document.querySelectorAll('.color-picker').forEach((picker) => {
+                    randomTheme[picker.dataset.cssVar] = randomColor();
+                });
+                applyTheme({ ...themeDefaults, ...randomTheme });
+                renderAlphabetKeys();
+                SoundEngine.playPop();
+            });
+
+            randomThemeBtn.addEventListener('animationend', () => {
+                randomThemeBtn.classList.remove('rolling');
+            });
+
             resetThemeBtn.addEventListener('click', () => {
                 applyTheme(themeDefaults);
-                closeThemePanel();
                 SoundEngine.playPop();
             });
 
